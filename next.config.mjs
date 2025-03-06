@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  basePath: process.env.GITHUB_ACTIONS ? '/VinIA' : '',
+  basePath: process.env.GITHUB_PAGES ? '/VinIA' : '',
   images: {
     unoptimized: true,
     remotePatterns: [

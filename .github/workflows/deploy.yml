@@ -21,25 +21,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Debug Info
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "\nDirectory contents:"
+          ls -la
+          echo "\nNode version:"
+          node -v
+          echo "\nNPM version:"
+          npm -v
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: 'npm'
       
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-        
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm install
+          echo "\nInstalled dependencies:"
+          npm list --depth=0
       
       - name: Build with Next.js
-        run: npm run build
+        run: |
+          echo "Starting build..."
+          npm run build
+          echo "\nBuild output directory:"
+          ls -la out/
+        env:
+          CI: true
+          GITHUB_PAGES: true
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: out
 
   deploy:
     environment:
