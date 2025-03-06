@@ -17,6 +17,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: template-2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,6 +29,7 @@ jobs:
         with:
           node-version: "20"
           cache: npm
+          cache-dependency-path: template-2/package-lock.json
       
       - name: Install dependencies
         run: npm ci
@@ -36,7 +40,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: template-2/out
 
   deploy:
     environment:
@@ -47,4 +51,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 
+        uses: actions/deploy-pages@v4
