@@ -1,14 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  basePath: process.env.NODE_ENV === 'production' ? '/VinIA' : '',
+  basePath: process.env.GITHUB_ACTIONS ? '/VinIA' : '',
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
         hostname: "placehold.co",
-        port: "",
-        pathname: "/**",
       },
       {
         protocol: "https",
@@ -23,10 +22,10 @@ const nextConfig = {
         hostname: "firebasestorage.googleapis.com",
       },
     ],
-    dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    unoptimized: true,
   },
+  // Disable server-side features for static export
+  trailingSlash: true,
+  reactStrictMode: true,
 };
 
 export default nextConfig;

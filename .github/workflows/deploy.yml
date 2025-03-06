@@ -20,35 +20,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
-      - name: Debug directory
-        run: |
-          pwd
-          ls -la
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: 'npm'
       
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
       - name: Install dependencies
-        run: |
-          npm ci
-          npm list
+        run: npm ci
       
       - name: Build with Next.js
-        run: |
-          echo "Starting build..."
-          npm run build
-          echo "Build completed"
-          ls -la out/
-        env:
-          NODE_ENV: production
+        run: npm run build
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: out
+          path: ./out
 
   deploy:
     environment:
