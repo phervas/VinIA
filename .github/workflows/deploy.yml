@@ -21,39 +21,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Debug Info
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "\nDirectory contents:"
-          ls -la
-          echo "\nNode version:"
-          node -v
-          echo "\nNPM version:"
-          npm -v
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: 'npm'
-      
-      - name: Install dependencies
+
+      - name: Clean install dependencies
         run: |
+          rm -rf node_modules
+          rm -f package-lock.json
           npm install
-          echo "\nInstalled dependencies:"
-          npm list --depth=0
-      
-      - name: Build with Next.js
+
+      - name: Build
         run: |
-          echo "Starting build..."
           npm run build
-          echo "\nBuild output directory:"
           ls -la out/
         env:
-          CI: true
-          GITHUB_PAGES: true
-      
+          NEXT_PUBLIC_BASE_PATH: /VinIA
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
