@@ -20,12 +20,12 @@ VinAI is an AI-powered wine companion app that helps you discover and pair the p
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/vinai.git
+   git clone https://github.com/phervas/VinIA.git
    ```
 
 2. Install dependencies:
    ```bash
-   cd vinai
+   cd VinIA
    npm install
    ```
 
@@ -51,6 +51,10 @@ src/
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Live Demo
+
+Check out the live demo at [https://phervas.github.io/VinIA](https://phervas.github.io/VinIA)
 
 ## License
 
