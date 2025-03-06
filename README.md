@@ -1,15 +1,57 @@
-# Ansh & Riley Full-Stack Template
+# VinAI - Your Personal Wine Sommelier
 
-This is a full-stack template project for Software Composers to create  applications with AI.
+VinAI is an AI-powered wine companion app that helps you discover and pair the perfect wines for any occasion.
 
-## Getting started
-To create a new project, you go to `/paths`, choose from our list of Paths, and then use Cursor's Composer feature to quickly scaffold your project!
+## Features
 
-You can also edit the Path's prompt template to be whatever you like!
+- 🍷 **Wine Scanner**: Scan wine bottles to get detailed information and reviews
+- 🍽️ **Food Pairing**: Get personalized wine recommendations based on your meal
+- 📱 **Modern UI**: Clean and intuitive interface built with Next.js and Tailwind CSS
+- 🎨 **Responsive Design**: Works seamlessly on all devices
 
-## Technologies used
-This doesn't really matter, but is useful for the AI to understand more about this project. We are using the following technologies
-- React with Next.js 14 App Router
-- TailwindCSS
-- Firebase Auth, Storage, and Database
-- Multiple AI endpoints including OpenAI, Anthropic, and Replicate using Vercel's AI SDK
+## Tech Stack
+
+- [Next.js 14](https://nextjs.org/) - React Framework
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [Lucide Icons](https://lucide.dev/) - Icons
+- TypeScript - Type Safety
+
+## Getting Started
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/vinai.git
+   ```
+
+2. Install dependencies:
+   ```bash
+   cd vinai
+   npm install
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Project Structure
+
+```
+src/
+├── app/                # Next.js app directory
+│   ├── home/          # Main app interface
+│   ├── scanner/       # Wine scanning feature
+│   └── food-wine/     # Food pairing feature
+├── components/        # Reusable components
+└── lib/              # Utility functions and configurations
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
