@@ -22,7 +22,7 @@ export default function WelcomePage() {
           </p>
         </div>
         
-        <Link href="/home">
+        <Link href="/home" className="block">
           <button
             className="inline-block bg-pink-500 text-white px-8 py-3 rounded-full font-medium shadow-lg hover:bg-pink-600 transition-colors"
           >
