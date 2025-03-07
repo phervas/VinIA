@@ -12,8 +12,8 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
-      <div className="text-center space-y-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4 md:overflow-hidden">
+      <div className="text-center space-y-6 -mt-[env(safe-area-inset-top)]">
         <div className="flex flex-col items-center space-y-4">
           <WineIcon className="w-20 h-20 text-pink-500" />
           <h1 className="text-3xl font-bold text-gray-900">Welcome to VinAI</h1>
