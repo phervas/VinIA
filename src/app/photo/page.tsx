@@ -98,6 +98,7 @@ export default function PhotoPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Test Photo</h1>
         {/* Camera/Image Selection Section */}
         <div className="bg-white rounded-xl p-4 border border-gray-100">
           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden relative">
