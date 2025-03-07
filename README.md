@@ -44,14 +44,18 @@ src/
 │   ├── home/          # Main app interface
 │   ├── scanner/       # Wine scanning feature
 │   └── food-wine/     # Food pairing feature
-├── components/        # Reusable components
-└── lib/              # Utility functions and configurations
+├── components/         # Reusable components
+└── lib/               # Utility functions and configurations
 ```
 
 ## Live Demo
 
-Check out the live demo at [https://phervas.github.io/VinIA](https://phervas.github.io/VinIA)
+Check out the live demo at https://phervas.github.io/VinIA
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is proprietary software. All rights reserved.
+
+Copyright (c) 2024 VinAI
+
+This software and its source code are protected by copyright law. No part of this software may be copied, modified, or distributed without explicit written permission from the copyright holder.
