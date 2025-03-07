@@ -48,10 +48,6 @@ src/
 └── lib/              # Utility functions and configurations
 ```
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ## Live Demo
 
 Check out the live demo at [https://phervas.github.io/VinIA](https://phervas.github.io/VinIA)
