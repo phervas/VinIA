@@ -2,6 +2,7 @@
 
 import { WineIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -21,12 +22,13 @@ export default function WelcomePage() {
           </p>
         </div>
         
-        <button
-          onClick={handleGetStarted}
-          className="inline-block bg-pink-500 text-white px-8 py-3 rounded-full font-medium shadow-lg hover:bg-pink-600 transition-colors"
-        >
-          Get Started
-        </button>
+        <Link href="/home">
+          <button
+            className="inline-block bg-pink-500 text-white px-8 py-3 rounded-full font-medium shadow-lg hover:bg-pink-600 transition-colors"
+          >
+            Get Started
+          </button>
+        </Link>
       </div>
     </div>
   );
