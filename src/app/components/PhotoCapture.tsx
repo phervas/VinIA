@@ -11,6 +11,55 @@ interface PhotoCaptureProps {
 }
 
 /**
+ * Crops an image to a square based on the guide area
+ * @param imageData - Base64 image data
+ * @returns Promise with the cropped image data
+ */
+const cropImageToGuideArea = (imageData: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+
+      // Calculate the guide area dimensions
+      // The white rectangle is 75% width and 50% height of the viewport
+      // We want a square that encompasses this area
+      const viewportRatio = img.height / img.width;
+      const guideWidth = img.width * 0.75;
+      const guideHeight = img.width * 0.75; // Making it square
+      
+      // Center the crop area
+      const x = (img.width - guideWidth) / 2;
+      const y = (img.height - guideHeight) / 2 - (img.height * 0.12); // Adjust for the -translate-y-12 we use in the UI
+
+      // Set canvas size to our desired square output
+      canvas.width = guideWidth;
+      canvas.height = guideHeight;
+
+      // Draw the cropped area
+      ctx.drawImage(
+        img,
+        x, y, guideWidth, guideHeight, // Source rectangle
+        0, 0, guideWidth, guideHeight  // Destination rectangle
+      );
+
+      resolve(canvas.toDataURL('image/jpeg', 0.92));
+    };
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image for cropping'));
+    };
+
+    img.src = imageData;
+  });
+};
+
+/**
  * PhotoCapture Component
  * 
  * A reusable component that provides photo capturing functionality using react-webcam.
@@ -54,15 +103,16 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
   }, [isOpen]);
   
   /**
-   * Captures a photo from the webcam
+   * Captures and crops a photo from the webcam
    */
-  const capturePhoto = useCallback(() => {
+  const capturePhoto = useCallback(async () => {
     if (!webcamRef.current) return;
     
     try {
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
-        setCapturedImage(imageSrc);
+        const croppedImage = await cropImageToGuideArea(imageSrc);
+        setCapturedImage(croppedImage);
         setIsCameraActive(false);
       } else {
         setError('Failed to capture image. Please try again.');
@@ -74,7 +124,7 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
   }, [webcamRef]);
 
   /**
-   * Opens file picker for image upload
+   * Opens file picker for image upload and crops the selected image
    */
   const handleUpload = () => {
     const input = document.createElement('input');
@@ -89,9 +139,10 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
       
       try {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           if (e.target && typeof e.target.result === 'string') {
-            setCapturedImage(e.target.result);
+            const croppedImage = await cropImageToGuideArea(e.target.result);
+            setCapturedImage(croppedImage);
             setError(null);
             setIsCameraActive(false);
           }
@@ -161,7 +212,8 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
   const videoConstraints = {
     facingMode: "environment", // Use back camera
     width: { ideal: 1920 },
-    height: { ideal: 1080 }
+    height: { ideal: 1080 },
+    imageSmoothing: false
   };
 
   if (!isOpen) return null;
