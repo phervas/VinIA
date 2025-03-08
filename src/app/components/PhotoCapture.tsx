@@ -11,6 +11,65 @@ interface PhotoCaptureProps {
 }
 
 /**
+ * Crops an image to a square based on the guide rectangle position
+ * @param imageData - Base64 image data
+ * @returns Promise with the cropped image data
+ */
+const cropImageToSquare = (imageData: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+
+      // Calculate the square crop area
+      // The guide rectangle is positioned at 12.5% from left/right and 25% from top/bottom
+      // and takes up 75% width and 50% height of the viewport
+      // We want a square that fully encompasses this area
+      const sourceWidth = img.width;
+      const sourceHeight = img.height;
+      
+      // Calculate the center point
+      const centerX = sourceWidth / 2;
+      const centerY = sourceHeight * 0.44; // Slightly above center due to -translate-y-12
+
+      // Calculate the crop size based on the guide rectangle
+      // We want the square to be large enough to contain the guide rectangle
+      // The guide rectangle is 75% of width and 50% of height
+      // So we'll make our square 80% of the width to ensure we capture everything
+      const cropSize = sourceWidth * 0.8;
+
+      // Calculate crop coordinates
+      const cropX = centerX - (cropSize / 2);
+      const cropY = centerY - (cropSize / 2);
+
+      // Set canvas size to our desired square
+      canvas.width = cropSize;
+      canvas.height = cropSize;
+
+      // Draw the cropped portion
+      ctx.drawImage(
+        img,
+        cropX, cropY, cropSize, cropSize, // Source coordinates
+        0, 0, cropSize, cropSize // Destination coordinates
+      );
+
+      resolve(canvas.toDataURL('image/jpeg', 0.92));
+    };
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image for cropping'));
+    };
+
+    img.src = imageData;
+  });
+};
+
+/**
  * PhotoCapture Component
  * 
  * A reusable component that provides photo capturing functionality using react-webcam.
@@ -31,7 +90,6 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
   
   // Refs
   const webcamRef = useRef<Webcam>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   
   // Reset state when component is closed
   useEffect(() => {
@@ -55,73 +113,16 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
   }, [isOpen]);
   
   /**
-   * Crops the image to the specified square area
-   * @param imageData - The full image data
-   * @returns The cropped image data
+   * Captures a photo from the webcam and crops it
    */
-  const cropImageToSquare = useCallback((imageData: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        reject(new Error("Canvas not available"));
-        return;
-      }
-
-      const img = new Image();
-      img.onload = () => {
-        // Get original dimensions
-        const originalWidth = img.width;
-        const originalHeight = img.height;
-        
-        // Calculate the crop square dimensions
-        // The square is centered and contains the white rectangle guide
-        // We use 75% of the image height to match the yellow square shown in the UI
-        const cropSize = Math.min(originalWidth, originalHeight) * 0.75;
-        
-        // Calculate crop position (centered)
-        const cropX = (originalWidth - cropSize) / 2;
-        const cropY = (originalHeight - cropSize) / 2;
-        
-        // Set canvas size to the crop size
-        canvas.width = cropSize;
-        canvas.height = cropSize;
-        
-        // Draw the cropped portion
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error("Cannot get canvas context"));
-          return;
-        }
-        
-        ctx.drawImage(
-          img,
-          cropX, cropY, cropSize, cropSize,  // Source rectangle
-          0, 0, cropSize, cropSize           // Destination rectangle
-        );
-        
-        // Convert back to data URL
-        const croppedImageData = canvas.toDataURL('image/jpeg', 0.92);
-        resolve(croppedImageData);
-      };
-      
-      img.onerror = () => {
-        reject(new Error("Failed to load image for cropping"));
-      };
-      
-      img.src = imageData;
-    });
-  }, []);
-
-  /**
-   * Captures a photo from the webcam
-   */
-  const capturePhoto = useCallback(() => {
+  const capturePhoto = useCallback(async () => {
     if (!webcamRef.current) return;
     
     try {
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
-        setCapturedImage(imageSrc);
+        const croppedImage = await cropImageToSquare(imageSrc);
+        setCapturedImage(croppedImage);
         setIsCameraActive(false);
       } else {
         setError('Failed to capture image. Please try again.');
@@ -148,9 +149,10 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
       
       try {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           if (e.target && typeof e.target.result === 'string') {
-            setCapturedImage(e.target.result);
+            const croppedImage = await cropImageToSquare(e.target.result);
+            setCapturedImage(croppedImage);
             setError(null);
             setIsCameraActive(false);
           }
@@ -181,24 +183,6 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
     setError(null);
     setIsCameraActive(true);
   };
-
-  /**
-   * Handles the image acceptance and crops it before passing to the parent
-   */
-  const handleAcceptImage = useCallback(async () => {
-    if (!capturedImage) return;
-    
-    try {
-      setIsLoading(true);
-      const croppedImage = await cropImageToSquare(capturedImage);
-      onAccept(croppedImage);
-    } catch (err) {
-      console.error('Error cropping image:', err);
-      setError('Failed to process the image. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [capturedImage, cropImageToSquare, onAccept]);
 
   /**
    * Handles webcam access errors with specific error messages
@@ -238,7 +222,8 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
   const videoConstraints = {
     facingMode: "environment", // Use back camera
     width: { ideal: 1920 },
-    height: { ideal: 1080 }
+    height: { ideal: 1080 },
+    imageSmoothing: false
   };
 
   if (!isOpen) return null;
@@ -281,7 +266,7 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
                 <X className="w-6 h-6" />
               </button>
               <button
-                onClick={handleAcceptImage}
+                onClick={() => onAccept(capturedImage)}
                 className="bg-green-500 text-white p-3 rounded-full hover:bg-green-600 transition-colors shadow-lg"
               >
                 <Check className="w-6 h-6" />
@@ -305,23 +290,17 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
               forceScreenshotSourceSize={true}
             />
             
-            {/* Square crop area indicator - semi-transparent yellow overlay */}
+            {/* Wine label positioning guides */}
             <div className="absolute inset-0 pointer-events-none">
-              <div className="w-full h-full flex items-center justify-center">
-                {/* Square crop area with yellow border */}
-                <div className="w-3/4 h-3/4 border-2 border-yellow-400 rounded-lg"></div>
+              <div className="w-full h-full flex items-center justify-center -translate-y-12">
+                {/* Rectangle frame for label */}
+                <div className="w-3/4 h-1/2 border-2 border-white rounded-lg"></div>
                 
-                {/* Wine label positioning guides */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -mt-12">
-                  {/* Rectangle frame for label */}
-                  <div className="w-[80%] h-[50%] border-2 border-white rounded-lg"></div>
-                  
-                  {/* Corner guides */}
-                  <div className="absolute top-0 left-0 w-8 h-8 -translate-x-1/4 -translate-y-1/4 border-l-2 border-t-2 border-white"></div>
-                  <div className="absolute top-0 right-0 w-8 h-8 translate-x-1/4 -translate-y-1/4 border-r-2 border-t-2 border-white"></div>
-                  <div className="absolute bottom-0 left-0 w-8 h-8 -translate-x-1/4 translate-y-1/4 border-l-2 border-b-2 border-white"></div>
-                  <div className="absolute bottom-0 right-0 w-8 h-8 translate-x-1/4 translate-y-1/4 border-r-2 border-b-2 border-white"></div>
-                </div>
+                {/* Corner guides */}
+                <div className="absolute top-1/4 left-[12.5%] w-8 h-8 border-l-2 border-t-2 border-white"></div>
+                <div className="absolute top-1/4 right-[12.5%] w-8 h-8 border-r-2 border-t-2 border-white"></div>
+                <div className="absolute bottom-1/4 left-[12.5%] w-8 h-8 border-l-2 border-b-2 border-white"></div>
+                <div className="absolute bottom-1/4 right-[12.5%] w-8 h-8 border-r-2 border-b-2 border-white"></div>
               </div>
             </div>
             
@@ -361,9 +340,6 @@ export default function PhotoCapture({ onAccept, onCancel, isOpen }: PhotoCaptur
           </div>
         ) : null}
       </div>
-      
-      {/* Hidden canvas for image processing */}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 } 
