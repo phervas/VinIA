@@ -1,10 +1,20 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, Loader2, X, Upload, Info, Check } from 'lucide-react';
+import { Camera, Loader2, X, Upload, Check } from 'lucide-react';
 import Webcam from 'react-webcam';
 
+/**
+ * PhotoPage Component
+ * 
+ * A component that provides wine label photo capturing functionality using react-webcam.
+ * Supports:
+ * - Taking photos with device camera
+ * - Uploading images from device
+ * - Displaying captured images with accept/reject options
+ */
 export default function PhotoPage() {
+  // State Management
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -13,77 +23,31 @@ export default function PhotoPage() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<boolean | null>(null);
   
+  // Refs
   const webcamRef = useRef<Webcam>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  // Detect iOS/mobile
+  // Client-side detection
   useEffect(() => {
     setIsClient(true);
   }, []);
   
-  const isIOS = isClient && typeof navigator !== 'undefined' && 
-    /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+  // Device detection helpers
+  const isIOS = isClient && /iPad|iPhone|iPod/.test(navigator?.userAgent || '') && 
     !(window as any).MSStream;
 
-  const isMobile = isClient && typeof navigator !== 'undefined' && 
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isMobile = isClient && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+    .test(navigator?.userAgent || '');
 
-  // Handle camera button click - simplified to just activate the camera
+  /**
+   * Activates the camera interface
+   */
   const handleCameraClick = () => {
     setIsCameraActive(true);
   };
 
-  // Open native camera on iOS
-  const openNativeCamera = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
-    
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      setIsLoading(true);
-      
-      try {
-        const imageData = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            if (typeof reader.result === 'string') {
-              resolve(reader.result);
-            } else {
-              reject(new Error('Failed to read image as string'));
-            }
-          };
-          reader.onerror = () => reject(new Error('Failed to read the image'));
-          reader.readAsDataURL(file);
-        });
-
-        // Create a new image to ensure it's loaded before showing
-        const img = new Image();
-        img.onload = () => {
-          setCapturedImage(imageData);
-          setError(null);
-          setIsLoading(false);
-        };
-        img.onerror = () => {
-          setError('Failed to load the image. Please try again.');
-          setIsLoading(false);
-        };
-        img.src = imageData;
-
-      } catch (err) {
-        console.error('Error handling image:', err);
-        setError('Failed to read the image. Please try again.');
-        setIsLoading(false);
-      }
-    };
-    
-    input.click();
-  };
-
-  // Take photo from webcam
+  /**
+   * Captures a photo from the webcam
+   */
   const capturePhoto = useCallback(() => {
     if (!webcamRef.current) return;
     
@@ -101,11 +65,14 @@ export default function PhotoPage() {
     }
   }, [webcamRef]);
 
-  // Handle upload button
+  /**
+   * Opens file picker for image upload
+   */
   const handleUpload = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
+    // No capture attribute to prevent camera option on mobile
     
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
@@ -140,22 +107,22 @@ export default function PhotoPage() {
     input.click();
   };
 
+  /**
+   * Clears the captured image and restarts the camera
+   */
   const retakePhoto = () => {
     setCapturedImage(null);
     setError(null);
-    
-    // If not iOS, restart the camera
-    if (!isIOS) {
-      setIsCameraActive(true);
-    }
+    setIsCameraActive(true);
   };
 
-  // Handle webcam errors with more specific messages
+  /**
+   * Handles webcam access errors with specific error messages
+   */
   const handleWebcamError = useCallback((err: string | Error) => {
     console.error('Webcam error:', err);
     setCameraPermission(false);
     
-    // More specific error messages based on the error
     if (err instanceof Error) {
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         setError('Camera access was denied. Please allow access when prompted.');
@@ -175,18 +142,29 @@ export default function PhotoPage() {
     setIsCameraActive(false);
   }, []);
 
-  // Handle successful camera access
+  /**
+   * Handles successful camera access
+   */
   const handleUserMedia = useCallback(() => {
     setCameraPermission(true);
     setError(null);
   }, []);
 
-  // Video constraints for webcam - simplified to match working example
+  // Camera configuration
   const videoConstraints = {
-    facingMode: "environment",
+    facingMode: "environment", // Use back camera
     width: { ideal: 1920 },
     height: { ideal: 1080 }
   };
+
+  /**
+   * Accepts the current image
+   */
+  const acceptImage = useCallback(() => {
+    setAcceptedImage(capturedImage);
+    setCapturedImage(null);
+    setIsCameraActive(false);
+  }, [capturedImage]);
 
   return (
     <div className="flex flex-col h-full">
@@ -195,10 +173,10 @@ export default function PhotoPage() {
         
         {/* Camera/Image Display Container */}
         <div className="bg-black rounded-xl overflow-hidden relative aspect-[9/16] max-h-[70vh]">
+          {/* Error State */}
           {error ? (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50 p-4">
               <div className="text-center max-w-xs">
-                <div className="w-8 h-8 text-red-500 mx-auto mb-2" />
                 <p className="text-red-500 text-sm mb-4">{error}</p>
                 <button
                   onClick={handleCameraClick}
@@ -210,10 +188,12 @@ export default function PhotoPage() {
               </div>
             </div>
           ) : isLoading ? (
+            // Loading State
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
               <Loader2 className="w-8 h-8 text-pink-500 animate-spin" />
             </div>
           ) : capturedImage ? (
+            // Image Review State
             <div className="relative w-full h-full">
               <img
                 src={capturedImage}
@@ -228,11 +208,7 @@ export default function PhotoPage() {
                   <X className="w-6 h-6" />
                 </button>
                 <button
-                  onClick={() => {
-                    setAcceptedImage(capturedImage);
-                    setCapturedImage(null);
-                    setIsCameraActive(false);
-                  }}
+                  onClick={acceptImage}
                   className="bg-green-500 text-white p-3 rounded-full hover:bg-green-600 transition-colors shadow-lg"
                 >
                   <Check className="w-6 h-6" />
@@ -240,6 +216,7 @@ export default function PhotoPage() {
               </div>
             </div>
           ) : acceptedImage ? (
+            // Accepted Image State
             <div className="relative w-full h-full">
               <img
                 src={acceptedImage}
@@ -248,13 +225,12 @@ export default function PhotoPage() {
               />
             </div>
           ) : isCameraActive ? (
+            // Active Camera State
             <div className="relative w-full h-full">
-              {/* React-Webcam component */}
+              {/* Camera */}
               <Webcam
                 audio={false}
                 ref={webcamRef}
-                width={1920}
-                height={1080}
                 screenshotFormat="image/jpeg"
                 screenshotQuality={0.92}
                 videoConstraints={videoConstraints}
@@ -314,6 +290,7 @@ export default function PhotoPage() {
               </div>
             </div>
           ) : (
+            // Initial State - Camera Button
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center p-4 space-y-4">
                 <button
@@ -330,9 +307,6 @@ export default function PhotoPage() {
           )}
         </div>
       </div>
-      
-      {/* Hidden canvas for capturing photos */}
-      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 } 
