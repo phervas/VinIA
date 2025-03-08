@@ -5,13 +5,65 @@ import { useChat } from 'ai/react';
 import { Camera, Loader2, AlertCircle } from 'lucide-react';
 import PhotoCapture from '../components/PhotoCapture';
 
-export default function ScannerPage() {
+interface ScanResult {
+  success: boolean;
+  message: string;
+  error?: string;
+}
+
+/**
+ * Custom hook to handle wine label scanning logic
+ */
+const useWineScanner = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const scanWineLabel = async (imageData: string): Promise<ScanResult> => {
+    try {
+      setIsScanning(true);
+      setError(null);
+      
+      // TODO: Replace with actual API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      return {
+        success: true,
+        message: "I've detected a wine label! This appears to be a 2021 Luberon 'Chemin des Loups' by Amédée."
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process the image';
+      setError(errorMessage);
+      return {
+        success: false,
+        message: '',
+        error: errorMessage
+      };
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  return {
+    isScanning,
+    error,
+    scanWineLabel,
+    setError
+  };
+};
+
+/**
+ * Scanner Page Component
+ * 
+ * Provides functionality to capture wine label images and get AI-powered
+ * information about the wine. Uses the PhotoCapture component for image
+ * capture and the OpenAI API for wine analysis.
+ */
+export default function ScannerPage() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isPhotoCaptureOpen, setIsPhotoCaptureOpen] = useState(false);
   
   const imageRef = useRef<HTMLImageElement>(null);
+  const { isScanning, error, scanWineLabel, setError } = useWineScanner();
   const { messages, input, handleInputChange, handleSubmit, isLoading: isChatLoading } = useChat({
     api: '/api/openai/chat',
   });
@@ -19,30 +71,17 @@ export default function ScannerPage() {
   const handleCapture = async () => {
     if (!capturedImage) return;
     
-    setIsScanning(true);
-    setError(null);
-    
-    try {
-      // Here we would send the image to our API for processing
-      // For now, we'll simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate successful scan
-      const response = "I've detected a wine label! This appears to be a 2021 Luberon 'Chemin des Loups' by Amédée.";
-      // Add the response to the chat
+    const result = await scanWineLabel(capturedImage);
+    if (result.success) {
+      // Add the scan result to the chat
       handleSubmit(new Event('submit') as any);
-    } catch (error) {
-      console.error('Error processing image:', error);
-      setError('Failed to process the image. Please try again.');
-    } finally {
-      setIsScanning(false);
     }
   };
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Camera/Image Selection Section */}
+        {/* Image Capture Section */}
         <div className="bg-white rounded-xl p-4 border border-gray-100">
           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden relative">
             {error ? (
@@ -66,10 +105,7 @@ export default function ScannerPage() {
                   src={capturedImage}
                   alt="Captured wine label"
                   className="w-full h-full object-contain"
-                  onError={() => {
-                    console.error('Image failed to render in DOM');
-                    setError('Failed to display the image. Please try again.');
-                  }}
+                  onError={() => setError('Failed to display the image. Please try again.')}
                 />
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   <button
@@ -110,24 +146,24 @@ export default function ScannerPage() {
         </div>
 
         {/* Chat Messages */}
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${
-              message.role === 'assistant' ? 'justify-start' : 'justify-end'
-            }`}
-          >
+        <div className="space-y-4">
+          {messages.map((message) => (
             <div
-              className={`max-w-[80%] rounded-lg p-3 ${
-                message.role === 'assistant'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'bg-pink-500 text-white'
-              }`}
+              key={message.id}
+              className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
             >
-              {message.content}
+              <div
+                className={`max-w-[80%] rounded-lg p-3 ${
+                  message.role === 'assistant'
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'bg-pink-500 text-white'
+                }`}
+              >
+                {message.content}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Chat Input */}
@@ -156,9 +192,7 @@ export default function ScannerPage() {
           setCapturedImage(imageData);
           setIsPhotoCaptureOpen(false);
         }}
-        onCancel={() => {
-          setIsPhotoCaptureOpen(false);
-        }}
+        onCancel={() => setIsPhotoCaptureOpen(false)}
       />
     </div>
   );
